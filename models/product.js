@@ -1,13 +1,16 @@
-const getDb = require("../util/database").getDb;
 const mongodb = require("mongodb");
 
+const getDb = require("../util/database").getDb;
+const ObjectId = mongodb.ObjectId;
+
 class Product {
-  constructor(title, imageUrl, price, description, id) {
+  constructor(title, imageUrl, price, description, id, userId) {
     this.title = title;
     this.price = price;
     this.description = description;
     this.imageUrl = imageUrl;
-    this._id = id;
+    this._id = id ? new ObjectId(id) : null;
+    this.userId = userId;
   }
 
   async save() {
@@ -17,7 +20,7 @@ class Product {
       if (this._id) {
         dbOp = await db
           .collection("products")
-          .updateOne({ _id: new mongodb.ObjectId(this._id) }, { $set: this });
+          .updateOne({ _id:this._id }, { $set: this });
       } else {
         dbOp = await db.collection("products").insertOne(this);
       }
@@ -34,8 +37,7 @@ class Product {
       //* id pada mongodb kita bertipe data object
       let product = await db
         .collection("products")
-        .find({ _id: new mongodb.ObjectId(id) })
-        .next();
+        .findOne({ _id: new mongodb.ObjectId(id) })
       // console.log(product);
       return product;
     } catch (err) {
@@ -51,21 +53,6 @@ class Product {
       return products;
     } catch (error) {
       console.log(error);
-    }
-  }
-
-  static async updateOne(id) {
-    try {
-      const db = getDb();
-      console.log(this.title);
-      // await db.collection("products").updateOne({_id: new mongodb.ObjectId(id)},{$set: {
-      //   title: this.title,
-      //   price: this.price,
-      //   description: this.description,
-      //   imageUrl: this.imageUrl
-      // }})
-    } catch (err) {
-      console.log(err);
     }
   }
 
