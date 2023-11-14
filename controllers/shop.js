@@ -43,7 +43,9 @@ exports.getIndex = (req, res, next) => {
 
 exports.getCart = async (req, res, next) => {
   try {
-    const products = await req.user.getCart();
+    const user = await req.user.populate('cart.items.productId');
+    const products = user.cart.items;
+    console.log(products)
     res.render("shop/cart", {
       path: "/cart",
       pageTitle: "Your Cart",
@@ -68,7 +70,7 @@ exports.postCart = async (req, res, next) => {
 exports.postCartDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
   console.log(prodId)
-  req.user.deleteCartItem(prodId);
+  req.user.deleteFromCart(prodId);
   res.redirect('/cart')
 };
 

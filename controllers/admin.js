@@ -13,7 +13,13 @@ exports.getAddProduct = (req, res, next) => {
 exports.postAddProduct = async (req, res, next) => {
   const { title, imageUrl, price, description } = req.body;
   try {
-    const product = new Product({ title, price, imageUrl, description });
+    const product = new Product({
+      title,
+      price,
+      imageUrl,
+      description,
+      userId: req.user,
+    });
     const result = await product.save();
     res.redirect("/products");
   } catch (err) {
@@ -58,8 +64,9 @@ exports.postEditProduct = async (req, res, next) => {
 
 exports.getProducts = async (req, res, next) => {
   try {
-    const products = await Product.find();
-    // console.log(products)
+    const products = await Product.find()
+      // .select("title description")
+      // .populate("userId", "name");
     res.render("admin/products", {
       prods: products,
       pageTitle: "Admin Products",
