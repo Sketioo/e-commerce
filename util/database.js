@@ -1,3 +1,5 @@
+//! We dont use this anymore!
+
 const mongodb = require("mongodb");
 const MongoClient = mongodb.MongoClient;
 
