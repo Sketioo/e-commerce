@@ -1,4 +1,5 @@
 const Product = require("../models/product");
+const Order = require("../models/order");
 
 exports.getProducts = (req, res, next) => {
   Product.find()
@@ -43,9 +44,9 @@ exports.getIndex = (req, res, next) => {
 
 exports.getCart = async (req, res, next) => {
   try {
-    const user = await req.user.populate('cart.items.productId');
+    const user = await req.user.populate("cart.items.productId");
     const products = user.cart.items;
-    console.log(products)
+    // console.log(products);
     res.render("shop/cart", {
       path: "/cart",
       pageTitle: "Your Cart",
@@ -69,36 +70,51 @@ exports.postCart = async (req, res, next) => {
 
 exports.postCartDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
-  console.log(prodId)
+  console.log(prodId);
   req.user.deleteFromCart(prodId);
-  res.redirect('/cart')
+  res.redirect("/cart");
 };
 
 exports.postOrder = async (req, res, next) => {
   try {
-    const order = await req.user.addOrder();
-    console.log(order)
-    if(order) {
-      res.redirect('/orders')
+    // const order = await req.user.addOrder();
+    const user = await req.user.populate("cart.items.productId");
+    const orderProducts = user.cart.items.map((i) => {
+      return { quantity: i.quantity, product: { ...i.productId._doc } };
+    });
+
+    const order = new Order({
+      products: orderProducts,
+      user: {
+        userId: req.user,
+        name: req.user.name,
+      },
+    });
+
+    const newOrder = await order.save();
+    if (newOrder) {
+      req.user.clearCart();
+      res.redirect("/orders");
     } else {
-      console.log(`Can't add order!`)
+      console.log(`Can't add order!`);
     }
   } catch (err) {
-    console.log(err)
+    console.log(err);
   }
 };
 
 exports.getOrders = async (req, res, next) => {
   try {
-    const orders = await req.user.getOrders();
-    if(orders) {
-      res.render('shop/orders', {
-        path: '/orders',
-        pageTitle: 'Your Orders',
-        orders: orders
+   const orders = await Order.find({'user.userId': req.user._id})
+    console.log(orders)
+    if (orders) {
+      res.render("shop/orders", {
+        path: "/orders",
+        pageTitle: "Your Orders",
+        orders: orders,
       });
     }
   } catch (err) {
-    console.log(err)
+    console.log(err);
   }
 };

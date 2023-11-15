@@ -26,6 +26,11 @@ const userSchema = new Schema({
   },
 });
 
+userSchema.methods.clearCart = async function() {
+  this.cart = {items: []}
+  await this.save()
+}
+
 userSchema.methods.deleteFromCart = async function (productId) {
   const updatedCart = await this.cart.items.filter((p) => {
     return p._id.toString() !== productId.toString();
