@@ -8,6 +8,7 @@ exports.getProducts = (req, res, next) => {
         prods: products,
         pageTitle: "All Products",
         path: "/products",
+        isAuthenticated: req.isLoggedIn,
       });
     })
     .catch((err) => {
@@ -23,6 +24,7 @@ exports.getProduct = (req, res, next) => {
         product: product,
         pageTitle: product.title,
         path: "/products",
+        isAuthenticated: req.isLoggedIn,
       });
     })
     .catch((err) => console.log(err));
@@ -35,6 +37,7 @@ exports.getIndex = (req, res, next) => {
         prods: products,
         pageTitle: "Shop",
         path: "/",
+        isAuthenticated: req.isLoggedIn,
       });
     })
     .catch((err) => {
@@ -45,12 +48,14 @@ exports.getIndex = (req, res, next) => {
 exports.getCart = async (req, res, next) => {
   try {
     const user = await req.user.populate("cart.items.productId");
+    // console.log(user)
     const products = user.cart.items;
-    // console.log(products);
+    console.log(products);
     res.render("shop/cart", {
       path: "/cart",
       pageTitle: "Your Cart",
       products: products,
+      isAuthenticated: req.isLoggedIn,
     });
   } catch (err) {
     console.log(err);
@@ -62,7 +67,9 @@ exports.postCart = async (req, res, next) => {
     const prodId = req.body.productId;
     const product = await Product.findById(prodId);
     const addProduct = await req.user.addToCart(product);
-    res.redirect("/cart");
+    res.redirect("/cart", {
+      isAuthenticated: req.isLoggedIn,
+    });
   } catch (err) {
     console.log(err);
   }
@@ -72,7 +79,9 @@ exports.postCartDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
   console.log(prodId);
   req.user.deleteFromCart(prodId);
-  res.redirect("/cart");
+  res.redirect("/cart", {
+    isAuthenticated: req.isLoggedIn,
+  });
 };
 
 exports.postOrder = async (req, res, next) => {
@@ -88,13 +97,16 @@ exports.postOrder = async (req, res, next) => {
       user: {
         userId: req.user,
         name: req.user.name,
+        isAuthenticated: req.isLoggedIn,
       },
     });
 
     const newOrder = await order.save();
     if (newOrder) {
       req.user.clearCart();
-      res.redirect("/orders");
+      res.redirect("/orders", {
+        isAuthenticated: req.isLoggedIn,
+      });
     } else {
       console.log(`Can't add order!`);
     }
@@ -105,13 +117,14 @@ exports.postOrder = async (req, res, next) => {
 
 exports.getOrders = async (req, res, next) => {
   try {
-   const orders = await Order.find({'user.userId': req.user._id})
-    console.log(orders)
+    const orders = await Order.find({ "user.userId": req.user._id });
+    console.log(orders);
     if (orders) {
       res.render("shop/orders", {
         path: "/orders",
         pageTitle: "Your Orders",
         orders: orders,
+        isAuthenticated: req.isLoggedIn,
       });
     }
   } catch (err) {
