@@ -36,7 +36,10 @@ app.use(session({
 
 app.use(async (req, res, next) => {
   try {
-    const user = await User.findById("65532f71b9a37ab38f25347c");
+    if(!req.session.user) {
+      return next()
+    }
+    const user = await User.findById(req.session.user._id);
     req.user = user;
     next();
   } catch (err) {
@@ -52,16 +55,20 @@ app.use(errorController.get404);
 
 main().catch((err) => console.log(err));
 async function main() {
-  await mongoose.connect(
-    MONGODB_URI
-  );
-  // await mongoose.connect('mongodb://localhost:27017/shop');
-  const findUser = User.findOne();
-  if (!findUser) {
-    const user = new User({ name: "tioo", email: "tiooluciff@gmail.com" });
-    await user.save();
+  try {
+    await mongoose.connect(
+      MONGODB_URI
+    );
+    // await mongoose.connect('mongodb://localhost:27017/shop');
+    const findUser = User.findOne();
+    if (!findUser) {
+      const user = new User({ name: "tioo", email: "tiooluciff@gmail.com" });
+      await user.save();
+    }
+    app.listen(3000, () => {
+      console.log("Listening on port 3000");
+    });
+  } catch (err) {
+    console.log(err)
   }
-  app.listen(3000, () => {
-    console.log("Listening on port 3000");
-  });
 }
