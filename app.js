@@ -59,12 +59,7 @@ async function main() {
     await mongoose.connect(
       MONGODB_URI
     );
-    // await mongoose.connect('mongodb://localhost:27017/shop');
-    const findUser = User.findOne();
-    if (!findUser) {
-      const user = new User({ name: "tioo", email: "tiooluciff@gmail.com" });
-      await user.save();
-    }
+    
     app.listen(3000, () => {
       console.log("Listening on port 3000");
     });
