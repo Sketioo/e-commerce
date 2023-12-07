@@ -38,6 +38,7 @@ exports.getIndex = (req, res, next) => {
         pageTitle: "Shop",
         path: "/",
         isAuthenticated: req.session.isLoggedIn,
+        csrfToken: req.csrfToken(),
       });
     })
     .catch((err) => {
@@ -92,7 +93,7 @@ exports.postOrder = async (req, res, next) => {
       products: orderProducts,
       user: {
         userId: req.user,
-        name: req.user.name,
+        name: req.user.email,
         isAuthenticated: req.session.isLoggedIn,
       },
     });
