@@ -2,21 +2,21 @@ const path = require("path");
 
 const express = require("express");
 const mongoose = require("mongoose");
-const session  =require('express-session');
-const MongoDBStore = require('connect-mongodb-session')(session);
+const session = require("express-session");
+const MongoDBStore = require("connect-mongodb-session")(session);
 const bodyParser = require("body-parser");
 
 const errorController = require("./controllers/error");
 const User = require("./models/user");
 
-const MONGODB_URI = "mongodb+srv://tiooluciferr666:8uQ8C4oZx4Uvg2wn@cluster0.4oajlgo.mongodb.net/shop?retryWrites=true";
+const MONGODB_URI =
+  "mongodb+srv://tiooluciferr666:8uQ8C4oZx4Uvg2wn@cluster0.4oajlgo.mongodb.net/shop?retryWrites=true";
 
 const app = express();
 const store = new MongoDBStore({
   uri: MONGODB_URI,
-  collection: 'sessions'
-})
-
+  collection: "sessions",
+});
 
 app.set("view engine", "ejs");
 app.set("views", "views");
@@ -27,17 +27,19 @@ const authRoutes = require("./routes/auth");
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
-app.use(session({
-  secret: 'thisissecret',
-  resave: false,
-  saveUninitialized: false,
-  store: store //* we use it for saving session data in alternative storage 
-}))
+app.use(
+  session({
+    secret: "thisissecret",
+    resave: false,
+    saveUninitialized: false,
+    store: store, //* we use it for saving session data in alternative storage
+  })
+);
 
 app.use(async (req, res, next) => {
   try {
-    if(!req.session.user) {
-      return next()
+    if (!req.session.user) {
+      return next();
     }
     const user = await User.findById(req.session.user._id);
     req.user = user;
@@ -56,14 +58,12 @@ app.use(errorController.get404);
 main().catch((err) => console.log(err));
 async function main() {
   try {
-    await mongoose.connect(
-      MONGODB_URI
-    );
-    
+    await mongoose.connect(MONGODB_URI);
+
     app.listen(3000, () => {
       console.log("Listening on port 3000");
     });
   } catch (err) {
-    console.log(err)
+    console.log(err);
   }
 }
