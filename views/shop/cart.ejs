@@ -5,6 +5,9 @@
     <body>
         <%- include('../includes/navigation.ejs') %>
         <main>
+            <% if(successMsg) { %>
+                <div class="alert user-message user-message--error alert-success col-4 p-2 my-3" role="alert"><%= successMsg %></div>
+            <% } %>
             <% if (products.length > 0) { %>
                 <ul class="cart__item-list">
                     <% products.forEach(p => { %>
@@ -23,7 +26,7 @@
                 <div class="centered">
                     <form action="/create-order" method="POST">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        <button type="submit" class="btn">Order Now!</button>
+                        <button type="submit" class="btn btn-success">Order Now!</button>
                     </form>
                 </div>
                 
