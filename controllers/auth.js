@@ -1,6 +1,21 @@
 const bcrypt = require("bcrypt");
+const sgMail = require("@sendgrid/mail");
+require("dotenv").config();
 
 const User = require("../models/user");
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const sendEMail = async (pesan) => {
+  try {
+    await sgMail.send(pesan);
+  } catch (error) {
+    console.error(error);
+
+    if (error.response) {
+      console.error(error.response.body);
+    }
+  }
+};
 
 exports.getLogin = (req, res, next) => {
   let message = req.flash("error");
@@ -42,6 +57,16 @@ exports.getSignup = async (req, res, next) => {
 exports.postSignup = async (req, res, next) => {
   try {
     const { email, password, confirmPassword } = req.body;
+    const msg = {
+      to: [email],
+      from: {
+        name: "tiootest",
+        email: process.env.FROM_EMAIL,
+      }, // Use the email address or domain you verified above
+      subject: "Succeded Signup",
+      text: "Signup success!!",
+      html: "<strong>Signup success!!</strong>",
+    };
 
     const userDoc = await User.findOne({ email: email });
     if (!userDoc) {
@@ -52,10 +77,19 @@ exports.postSignup = async (req, res, next) => {
         cart: { items: [] },
       });
       await newUser.save();
+      //* With this approach it maybe make our apps slow because we wait 
+      //* this function to complete before running the next script (In big app)
+      const mail = await sendEMail(msg);
+      if (!mail) {
+        req.flash("Signup cannot succeded!");
+      }
       req.flash("success", "User created succesfully");
       res.redirect("/login");
     } else {
-      req.flash("error", "A user with this email already exists. Please use a different email");
+      req.flash(
+        "error",
+        "A user with this email already exists. Please use a different email"
+      );
       return res.redirect("/signup");
     }
   } catch (err) {
