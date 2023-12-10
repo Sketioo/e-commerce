@@ -6,17 +6,16 @@ const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
 const bodyParser = require("body-parser");
 const csrf = require('csurf');
-const flash = require('connect-flash')
+const flash = require('connect-flash');
+require("dotenv").config();
 
 const errorController = require("./controllers/error");
 const User = require("./models/user");
 
-const MONGODB_URI =
-  "mongodb+srv://tiooluciferr666:8uQ8C4oZx4Uvg2wn@cluster0.4oajlgo.mongodb.net/shop?retryWrites=true";
-
 const app = express();
 const store = new MongoDBStore({
-  uri: MONGODB_URI,
+  //* Your cluster connection
+  uri: process.env.MONGODB,
   collection: "sessions",
 });
 const csrfProtection = csrf();
@@ -69,7 +68,7 @@ app.use(errorController.get404);
 main().catch((err) => console.log(err));
 async function main() {
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(process.env.MONGODB);
 
     app.listen(3000, () => {
       console.log("Listening on port 3000");
