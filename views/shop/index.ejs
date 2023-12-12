@@ -5,6 +5,9 @@
 <body>
     <%- include('../includes/navigation.ejs') %>
 
+    <% if(successMessage) { %>
+        <div class="alert user-message user-message--error alert-success col-4 p-2 my-2" role="alert"><%= successMessage %></div>
+    <% } %>
     <main>
         <% if (prods.length > 0) { %>
             <div class="grid">

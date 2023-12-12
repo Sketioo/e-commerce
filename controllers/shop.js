@@ -8,7 +8,6 @@ exports.getProducts = (req, res, next) => {
         prods: products,
         pageTitle: "All Products",
         path: "/products",
-        
       });
     })
     .catch((err) => {
@@ -24,21 +23,26 @@ exports.getProduct = (req, res, next) => {
         product: product,
         pageTitle: product.title,
         path: "/products",
-        
       });
     })
     .catch((err) => console.log(err));
 };
 
 exports.getIndex = (req, res, next) => {
+  let successMsg = req.flash("success");
+  if (successMsg.length > 0) {
+    successMsg = successMsg[0];
+  } else {
+    successMsg = null;
+  }
   Product.find()
     .then((products) => {
       res.render("shop/index", {
         prods: products,
         pageTitle: "Shop",
         path: "/",
-        
         csrfToken: req.csrfToken(),
+        successMessage: successMsg,
       });
     })
     .catch((err) => {
@@ -50,7 +54,7 @@ exports.getCart = async (req, res, next) => {
   try {
     const user = await req.user.populate("cart.items.productId");
     const products = user.cart.items;
-    let successMsg = req.flash('success');
+    let successMsg = req.flash("success");
     if (successMsg.length > 0) {
       successMsg = successMsg[0];
     } else {
@@ -60,7 +64,7 @@ exports.getCart = async (req, res, next) => {
       path: "/cart",
       pageTitle: "Your Cart",
       products: products,
-      successMsg
+      successMsg,
     });
   } catch (err) {
     console.log(err);
@@ -72,10 +76,10 @@ exports.postCart = async (req, res, next) => {
     const prodId = req.body.productId;
     const product = await Product.findById(prodId);
     const addProduct = await req.user.addToCart(product);
-    req.flash('success', 'Added to cart!')
+    req.flash("success", "Added to cart!");
     res.redirect("/cart");
   } catch (err) {
-    res.flash('error', 'An error occurred. Please try again')
+    res.flash("error", "An error occurred. Please try again");
     console.log(err);
   }
 };
@@ -100,14 +104,13 @@ exports.postOrder = async (req, res, next) => {
       user: {
         userId: req.user,
         name: req.user.email,
-        
       },
     });
 
     const newOrder = await order.save();
     if (newOrder) {
       req.user.clearCart();
-      req.flash('success', 'Successfully make an order!')
+      req.flash("success", "Successfully make an order!");
       res.redirect("/orders");
     } else {
       console.log(`Can't add order!`);
@@ -120,7 +123,7 @@ exports.postOrder = async (req, res, next) => {
 exports.getOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ "user.userId": req.user._id });
-    let successMsg = req.flash('success');
+    let successMsg = req.flash("success");
     if (successMsg.length > 0) {
       successMsg = successMsg[0];
     } else {
@@ -131,7 +134,7 @@ exports.getOrders = async (req, res, next) => {
         path: "/orders",
         pageTitle: "Your Orders",
         orders: orders,
-        successMsg
+        successMsg,
       });
     }
   } catch (err) {

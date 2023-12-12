@@ -1,3 +1,5 @@
+const crypto = require("crypto");
+
 const bcrypt = require("bcrypt");
 const sgMail = require("@sendgrid/mail");
 require("dotenv").config();
@@ -63,9 +65,20 @@ exports.postSignup = async (req, res, next) => {
         name: "tiootest",
         email: process.env.FROM_EMAIL,
       }, // Use the email address or domain you verified above
-      subject: "Succeded Signup",
+      subject: "Welcome to TokoKU! Your Account Is Ready",
       text: "Signup success!!",
-      html: "<strong>Signup success!!</strong>",
+      html: `
+        <p>Dear User,</p>
+        <p>Welcome to Your App Name! We're thrilled to have you on board.</p>
+        <p>You have successfully signed up for our service. Here are a few things you can do:</p>
+        <ul>
+          <li>Explore our app features and functionalities.</li>
+          <li>Complete your profile to personalize your experience.</li>
+          <li>Contact our support team if you have any questions or need assistance.</li>
+        </ul>
+        <p>Thank you once again for joining us!</p>
+        <p>Best Regards,<br/>Your App Name Team</p>
+     `,
     };
 
     const userDoc = await User.findOne({ email: email });
@@ -77,7 +90,7 @@ exports.postSignup = async (req, res, next) => {
         cart: { items: [] },
       });
       await newUser.save();
-      //* With this approach it maybe make our apps slow because we wait 
+      //* With this approach it maybe make our apps slow because we wait
       //* this function to complete before running the next script (In big app)
       const mail = await sendEMail(msg);
       if (!mail) {
@@ -130,4 +143,79 @@ exports.postLogout = (req, res, next) => {
     console.log(err);
     res.redirect("/");
   });
+};
+
+exports.getReset = (req, res, next) => {
+  let errorMsg = req.flash("error");
+  let successMsg = req.flash("success");
+
+  if (errorMsg.length > 0) {
+    errorMsg = errorMsg[0];
+    successMsg = null;
+  } else if (successMsg.length > 0) {
+    successMsg = successMsg[0];
+    errorMsg = null;
+  } else {
+    errorMsg = null;
+    successMsg = null;
+  }
+  res.render("auth/reset", {
+    path: "/reset",
+    pageTitle: "Reset Password",
+    errorMessage: errorMsg,
+  });
+};
+
+exports.postReset = async (req, res, next) => {
+  try {
+    let userToken;
+    const { email } = req.body;
+    crypto.randomBytes(32, (err, buffer) => {
+      if (err) {
+        console.log(err);
+        return res.flash("error", "Reseting password error");
+      }
+
+      const token = buffer.toString("hex");
+      userToken = token;
+    });
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      req.flash("error", "User with this usernmae does not exist");
+      return res.redirect("/reset");
+    }
+
+    user.resetToken = userToken;
+    user.resetTokenExpiration = Date.now() + 3600000;
+    await user.save();
+
+    const msg = {
+      to: [email],
+      from: {
+        name: "tiootest",
+        email: process.env.FROM_EMAIL,
+      }, // Use the email address or domain you verified above
+      subject: "Password Reset Request for Your TokoKU Account",
+      text: "Reset success!!",
+      html: `
+        <h1>Password Reset Request</h1>
+        <p>Hello,</p>
+        <p>You have requested to reset your password. Click the following link to set a new password:</p>
+        <p><a href="http://localhost:3000/reset/${userToken}">Reset Password</a></p>
+        <p>If you did not request this password reset, please ignore this email. Your password will remain unchanged.</p>
+        <p>Thank you!</p>
+        <p>Best Regards,<br/>Your App Name Team</p>
+      `,
+    };
+
+    const mail = await sendEMail(msg);
+    console.log(mail);
+    if (!mail) {
+      req.flash("success", "Reset password success");
+      return res.redirect("/");
+    }
+
+  } catch (err) {
+    console.log(err);
+  }
 };
