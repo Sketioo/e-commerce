@@ -4,7 +4,7 @@ exports.getAddProduct = (req, res, next) => {
   res.render("admin/edit-product", {
     pageTitle: "Add Product",
     path: "/admin/add-product",
-    editing: false
+    editing: false,
   });
 };
 
@@ -33,7 +33,9 @@ exports.getEditProduct = async (req, res, next) => {
     }
     const prodId = req.params.productId;
     const product = await Product.findById(prodId);
-    // console.log(product)
+    if (req.user._id.toString() !== product.userId.toString()) {
+      return res.redirect("/admin/products");
+    }
 
     res.render("admin/edit-product", {
       pageTitle: "Edit Product",
@@ -47,14 +49,25 @@ exports.getEditProduct = async (req, res, next) => {
 };
 
 exports.postEditProduct = async (req, res, next) => {
-  const { productId, title, imageUrl, price, description } = req.body;
   try {
-    const product = await Product.findOneAndUpdate(
+    const { productId, title, imageUrl, price, description } = req.body;
+
+    const product = await Product.findById(productId);
+    if (req.user._id.toString() !== product.userId.toString()) {
+      return res.redirect("/admin/products");
+    }
+    const productOp = await Product.findOneAndUpdate(
       { _id: productId },
       { title, imageUrl, price, description }
     );
-    await product.save();
-    res.redirect(`/admin/products`);
+
+    if (productOp) {
+      await product.save();
+      res.redirect(`/admin/products`);
+    } else {
+      req.flash("error", "Can't edit product! something went wrong");
+      res.redirect("/admin/products");
+    }
   } catch (err) {
     console.log(err);
   }
@@ -62,9 +75,9 @@ exports.postEditProduct = async (req, res, next) => {
 
 exports.getProducts = async (req, res, next) => {
   try {
-    const products = await Product.find()
-      // .select("title description")
-      // .populate("userId", "name");
+    const products = await Product.find({userId: req.user.id})
+    // .select("title description")
+    // .populate("userId", "name");
     res.render("admin/products", {
       prods: products,
       pageTitle: "Admin Products",
@@ -77,6 +90,12 @@ exports.getProducts = async (req, res, next) => {
 
 exports.postDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
-  await Product.findByIdAndDelete(prodId);
+  const deleteProduct = await Product.deleteOne({
+    _id: prodId,
+    userId: req.user._id,
+  });
+  if (deleteProduct.deletedCount == 0) {
+    return res.redirect("/login");
+  }
   res.redirect("/admin/products");
 };

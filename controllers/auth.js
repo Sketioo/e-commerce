@@ -140,7 +140,9 @@ exports.postLogin = async (req, res, next) => {
 
 exports.postLogout = (req, res, next) => {
   req.session.destroy((err) => {
-    console.log(err);
+    if (err) {
+      return console.log(err);
+    }
     res.redirect("/");
   });
 };
@@ -209,13 +211,82 @@ exports.postReset = async (req, res, next) => {
     };
 
     const mail = await sendEMail(msg);
-    console.log(mail);
     if (!mail) {
       req.flash("success", "Reset password success");
       return res.redirect("/");
     }
-
   } catch (err) {
+    console.log(err);
+  }
+};
+
+exports.getNewPassword = async (req, res, next) => {
+  try {
+    let errorMsg = req.flash("error");
+    let successMsg = req.flash("success");
+    const token = req.params.token;
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiration: { $gt: Date.now() },
+    });
+
+    if (user) {
+      if (errorMsg.length > 0) {
+        errorMsg = errorMsg[0];
+        successMsg = null;
+      } else if (successMsg.length > 0) {
+        successMsg = successMsg[0];
+        errorMsg = null;
+      } else {
+        errorMsg = null;
+        successMsg = null;
+      }
+      res.render("auth/new-password", {
+        path: "/new-password",
+        pageTitle: "New Password",
+        errorMessage: errorMsg,
+        successMessage: successMsg,
+        passwordToken: token,
+        userId: user._id,
+      });
+    } else {
+      res.redirect("/login");
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+exports.postNewPassword = async (req, res, next) => {
+  try {
+    const { password, userId, passwordToken } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const updateUser = await User.findOneAndUpdate(
+      { _id: userId, resetToken: passwordToken },
+      {
+        password: hashedPassword,
+        $unset: { resetToken: "", resetTokenExpiration: "" },
+      }
+    );
+    if (updateUser) {
+      updateUser.resetToken = undefined;
+      updateUser.resetTokenExpiration = undefined;
+      await updateUser.save();
+      req.flash("success", "Your password has been successfully updated.");
+      res.redirect("/login");
+    } else {
+      req.flash(
+        "error",
+        "Oops! Something went wrong while updating your password."
+      );
+      res.redirect(`/reset/${passwordToken}`);
+    }
+  } catch (err) {
+    req.flash(
+      "error",
+      "Oops! Something went wrong while updating your password."
+    );
+    res.redirect(`/reset/${passwordToken}`);
     console.log(err);
   }
 };

@@ -113,7 +113,8 @@ exports.postOrder = async (req, res, next) => {
       req.flash("success", "Successfully make an order!");
       res.redirect("/orders");
     } else {
-      console.log(`Can't add order!`);
+      // console.log(`Can't add order!`);
+      res.redirect("/cart");
     }
   } catch (err) {
     console.log(err);
