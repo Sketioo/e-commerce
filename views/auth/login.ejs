@@ -10,17 +10,14 @@
         <% if(errorMessage) { %>
             <div class="alert user-message user-message--error alert-danger col-4 p-2 my-2" role="alert"><%= errorMessage %></div>
         <% } %>
-        <% if(successMessage) { %>
-            <div class="alert user-message user-message--error alert-success col-4 p-2 my-2" role="alert"><%= successMessage %></div>
-        <% } %>
         <form class="login-form" action="/login" method="POST">
             <div class="form-control">
                 <label for="email">E-mail</label>
-                <input type="text" name="email" id="email">
+                <input type="text" name="email" id="email" value="<%= userInput.email %>">
             </div>
             <div class="form-control">
                 <label for="password">Password</label>
-                <input type="password" name="password" id="password">
+                <input type="password" name="password" id="password" value="<%= userInput.password %>">
             </div>
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <button class="btn btn-success" type="submit">Login</button>

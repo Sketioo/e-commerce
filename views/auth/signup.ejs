@@ -10,18 +10,18 @@
         <% if(errorMessage) { %>
             <div class="alert user-message user-message--error alert-danger col-4 p-2 my-2" role="alert"><%= errorMessage %></div>
         <% } %>
-        <form class="login-form" action="/signup" method="POST">
+        <form class="login-form needs-validation" action="/signup" method="POST" novalidate>
             <div class="form-control">
                 <label for="email">E-Mail</label>
-                <input type="email" name="email" id="email">
+                <input type="email" name="email" id="emailValidation" value="<%= userInput.email %>" required>            
             </div>
             <div class="form-control">
                 <label for="password">Password</label>
-                <input type="password" name="password" id="password">
+                <input type="password" name="password" id="passwordValidation" value="<%= userInput.password %>" required>
             </div>
             <div class="form-control">
                 <label for="confirmPassword">Confirm Password</label>
-                <input type="password" name="confirmPassword" id="confirmPassword">
+                <input type="password" name="confirmPassword" id="confirmPasswordValidation" value="<%= userInput.confirmPassword %>" required>
             </div>
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <button class="btn btn-success" type="submit">Signup</button>

@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 
+const { validationResult } = require("express-validator");
 const bcrypt = require("bcrypt");
 const sgMail = require("@sendgrid/mail");
 require("dotenv").config();
@@ -38,11 +39,16 @@ exports.getLogin = (req, res, next) => {
     isAuthenticated: false,
     errorMessage: message,
     successMessage: successMsg,
+    userInput: {
+      email: "",
+      password: "",
+    },
   });
 };
 
 exports.getSignup = async (req, res, next) => {
   let message = req.flash("error");
+  const errors = validationResult(req);
   if (message.length > 0) {
     message = message[0];
   } else {
@@ -53,12 +59,34 @@ exports.getSignup = async (req, res, next) => {
     pageTitle: "Signup",
     isAuthenticated: false,
     errorMessage: message,
+    userInput: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    validationErrors: errors.array(),
   });
 };
 
 exports.postSignup = async (req, res, next) => {
   try {
     const { email, password, confirmPassword } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).render("auth/signup", {
+        path: "/signup",
+        pageTitle: "Signup",
+        isAuthenticated: false,
+        errorMessage: errors.array()[0].msg,
+        userInput: {
+          email,
+          password,
+          confirmPassword,
+        },
+        validationErrors: errors.array(),
+      });
+    }
+
     const msg = {
       to: [email],
       from: {
@@ -97,12 +125,8 @@ exports.postSignup = async (req, res, next) => {
         req.flash("Signup cannot succeded!");
       }
       req.flash("success", "User created succesfully");
-      res.redirect("/login");
+      return res.redirect("/login");
     } else {
-      req.flash(
-        "error",
-        "A user with this email already exists. Please use a different email"
-      );
       return res.redirect("/signup");
     }
   } catch (err) {
@@ -116,10 +140,31 @@ exports.postSignup = async (req, res, next) => {
 exports.postLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).render("auth/login", {
+        path: "/login",
+        pageTitle: "Login",
+        isAuthenticated: false,
+        errorMessage: errors.array()[0].msg,
+        userInput: {
+          email,
+          password,
+        },
+      });
+    }
     const user = await User.findOne({ email });
     if (!user) {
-      req.flash("error", "Invalid email or password.");
-      return res.redirect("/login");
+      return res.status(422).render("auth/login", {
+        path: "/login",
+        pageTitle: "Login",
+        isAuthenticated: false,
+        errorMessage: errors.array()[0].msg,
+        userInput: {
+          email,
+          password,
+        },
+      });
     }
 
     const doMatch = await bcrypt.compare(password, user.password);
@@ -131,7 +176,16 @@ exports.postLogin = async (req, res, next) => {
       });
     } else {
       req.flash("error", "Invalid email or password.");
-      res.redirect("/login");
+      res.status(422).render("auth/login", {
+        path: "/login",
+        pageTitle: "Login",
+        isAuthenticated: false,
+        errorMessage: errors.array()[0].msg,
+        userInput: {
+          email,
+          password,
+        },
+      });
     }
   } catch (err) {
     console.log(err);
